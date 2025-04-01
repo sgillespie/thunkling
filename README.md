@@ -1,36 +1,41 @@
-# Untitled Function Language
+# Untitled Functional Language
 
 A minimal lazy functional programming language inspired by System F and ML.
 
 # Introduction
 
 This project aims to explore what it takes to build a programming language from the ground
-up. It is therefore designed to be as small as possible but big enough to be useful. It
-lacks features found in most other languages such as user-defined types.
+up. It is therefore designed to be as small as possible to be useful. For this reason, it's
+missing many features you'd expect in a full featured programming language, such as 
+user-defined types and reusable modules.
 
-Untitled Functional Language is roughly equivalent to System F, along with the following
-extensions:
+# Features
 
- * Named global functions
+Untitled Functional Language is roughly equivalent to System F, although it has 
+extensions for convenience, such as:
+
+ * Named functions
  * Local let-bindings
- * Built-in types (Boolean, Integer, Float, Char, and String)
- * Literals
+
+It contains the following built-in types:
+
+ * Boolean
+ * Char
+ * Integer
+ * Float
+ * String
+
+Expressions are evaluated lazily in non-strict order.
+
+The syntax is based on ML with Hindley-Milner type inference. Polymorphic types are
+therefore limited to rank-1.
 
 # Syntax
 
-A UFL file consists of a sequence of global bindings and (optionally) their type
-annotations:
-
-    f : Int
-    f = 10
-
-    g : Bool -> Bool
-    g x = x
-
-    h : forall a. a -> a
-    h x = x
+A program contains a sequence of named functions, including main:
 
     main : ()
-    main = ()
+    main = greet "Hello, World!"
 
-
+    greet : String -> ()
+    greet msg = println msg
