@@ -1,43 +1,43 @@
-cabal-version:      3.4
-name:               untitled-functional-language
-version:            0.1.0.0
-synopsis:           A minimal lazy functional programming language
-homepage:           https://github.com/sgillespie/untitled-functional-language
-license:            MIT
-license-file:       LICENSE
-author:             Sean D Gillespie
-maintainer:         sean@mistersg.net
-copyright:          2025 Sean Gillespie
-category:           Development
-build-type:         Simple
-extra-doc-files:    CHANGELOG.md
+cabal-version: 3.4
+name: untitled-functional-language
+version: 0.1.0.0
+synopsis: A minimal lazy functional programming language
+homepage: https://github.com/sgillespie/untitled-functional-language
+license: MIT
+license-file: LICENSE
+author: Sean D Gillespie
+maintainer: sean@mistersg.net
+copyright: 2025 Sean Gillespie
+category: Development
+build-type: Simple
+extra-doc-files: CHANGELOG.md
 
 common warnings
-    ghc-options: -Wall
+  ghc-options: -Wall
 
 library
-    import:           warnings
-    exposed-modules:  MyLib
-    build-depends:    base ^>=4.18.2.1
-    hs-source-dirs:   src
-    default-language: GHC2021
+  import: warnings
+  exposed-modules: MyLib
+  build-depends: base ^>=4.18.2.1
+  hs-source-dirs: src
+  default-language: GHC2021
 
 executable untitled-functional-language
-    import:           warnings
-    main-is:          Main.hs
-    build-depends:
-        base ^>=4.18.2.1,
-        untitled-functional-language
+  import: warnings
+  main-is: Main.hs
+  build-depends:
+    base ^>=4.18.2.1,
+    untitled-functional-language,
 
-    hs-source-dirs:   app
-    default-language: GHC2021
+  hs-source-dirs: app
+  default-language: GHC2021
 
 test-suite untitled-functional-language-test
-    import:           warnings
-    default-language: GHC2021
-    type:             exitcode-stdio-1.0
-    hs-source-dirs:   test
-    main-is:          Main.hs
-    build-depends:
-        base ^>=4.18.2.1,
-        untitled-functional-language
+  import: warnings
+  default-language: GHC2021
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  build-depends:
+    base ^>=4.18.2.1,
+    untitled-functional-language,
