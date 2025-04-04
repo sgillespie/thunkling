@@ -38,7 +38,7 @@
             };
 
             buildInputs = [ ];
-            inputsFrom = [ formatters.build.devShell ];
+            inputsFrom = [ formatters.config.build.devShell ];
           };
         };
 
@@ -84,7 +84,7 @@
       pkgs.lib.recursiveUpdate flake {
         inherit project;
 
-        packages.default = flake.packages."untitled-functional-language:exe:untitled-functional-language";
+        packages.default = flake.packages."untitled-functional-language:exe:untitledc";
         legacyPackages = pkgs;
 
         checks.formatting = formatters.config.build.check inputs.self;

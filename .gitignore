@@ -2,5 +2,7 @@
 dist-newstyle
 
 # Nix
+.direnv
+.envrc
 result
 

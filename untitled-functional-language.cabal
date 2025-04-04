@@ -22,7 +22,7 @@ library
   hs-source-dirs: src
   default-language: GHC2021
 
-executable untitled-functional-language
+executable untitledc
   import: warnings
   main-is: Main.hs
   build-depends:
