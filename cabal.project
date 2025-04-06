@@ -1,5 +1,7 @@
 packages:
   ./*.cabal
 
-test-show-details: direct
 index-state: 2024-12-30T17:04:31Z
+
+tests: true
+test-show-details: direct
