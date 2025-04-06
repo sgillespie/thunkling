@@ -32,7 +32,7 @@ executable untitledc
   hs-source-dirs: app
   default-language: GHC2021
 
-test-suite untitled-functional-language-test
+test-suite test
   import: warnings
   default-language: GHC2021
   type: exitcode-stdio-1.0
