@@ -7,18 +7,29 @@ on:
 
 jobs:
   build:
-    name: Checkout Source
-    uses: actions/checkout@v2
+    runs-on: ubuntu-latest
 
-    name: Install Nix
-    uses: cachix/install-nix-action@31.1.0
-    with:
-      github_access_token: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v2
 
-    name: Nix Build
-    run: nix build
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.1.0
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config:
+            accept-flake-config = true
 
-    name: Run Nix checks
-    run: |
-      nix build .\#checks.x86_64-linux.formatting
-      nix build .\#checks.untitled-functional-language:test:test
+      - name: Cache Nix
+        uses: cachix/cachix-action@v14
+        with:
+          name: sgillespie
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+      - name: Nix Build
+        run: nix build
+
+      - name: Run Nix checks
+        run: |
+          nix build .\#checks.x86_64-linux.formatting
+          nix build .\#checks.x86_64-linux.untitled-functional-language:test:test
