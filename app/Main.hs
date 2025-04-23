@@ -18,7 +18,7 @@ main :: IO ()
 main = run =<< Opts.execParser parserInfo
   where
     parserInfo = Opts.info (parseOpts <**> Opts.helper) desc
-    desc = 
+    desc =
       Opts.fullDesc
         <> Opts.progDesc "Compile thunkling programs"
 
@@ -48,4 +48,3 @@ parseOutputFile = OutputFile <$> Opts.strOption optMods
         <> Opts.value "main"
         <> Opts.showDefault
         <> Opts.help "Specify the output file."
-

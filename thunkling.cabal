@@ -13,24 +13,28 @@ build-type: Simple
 extra-doc-files: CHANGELOG.md
 
 common all
-  ghc-options: 
-    -Wall 
+  ghc-options:
+    -Wall
     -Werror
+
   mixins:
     base hiding (Prelude),
     relude (Relude as Prelude),
-    relude
-  build-depends:
-    base ^>= 4.18.2.1,
     relude,
+
+  build-depends:
+    base ^>=4.18.2.1,
+    relude,
+
   default-extensions:
     DerivingStrategies
 
 library
   import: all
   exposed-modules: MyLib
-  build-depends: 
-    megaparsec,
+  build-depends:
+    megaparsec
+
   hs-source-dirs: src
   default-language: GHC2021
 
@@ -38,8 +42,8 @@ executable thlc
   import: all
   main-is: Main.hs
   build-depends:
-    thunkling,
     optparse-applicative,
+    thunkling,
 
   hs-source-dirs: app
   default-language: GHC2021
@@ -51,4 +55,4 @@ test-suite test
   hs-source-dirs: test
   main-is: Main.hs
   build-depends:
-    thunkling,
+    thunkling
