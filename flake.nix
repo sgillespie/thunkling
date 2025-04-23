@@ -84,7 +84,7 @@
       pkgs.lib.recursiveUpdate flake {
         inherit project;
 
-        packages.default = flake.packages."untitled-functional-language:exe:untitledc";
+        packages.default = flake.packages."thunkling:exe:thlc";
         legacyPackages = pkgs;
 
         checks.formatting = formatters.config.build.check inputs.self;

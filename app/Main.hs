@@ -20,7 +20,7 @@ main = run =<< Opts.execParser parserInfo
     parserInfo = Opts.info (parseOpts <**> Opts.helper) desc
     desc = 
       Opts.fullDesc
-        <> Opts.progDesc "Compile untitled programs"
+        <> Opts.progDesc "Compile thunkling programs"
 
 run :: Options -> IO ()
 run _ = pure ()

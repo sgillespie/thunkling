@@ -1,8 +1,8 @@
 cabal-version: 3.4
-name: untitled-functional-language
+name: thunkling
 version: 0.1.0.0
 synopsis: A minimal lazy functional programming language
-homepage: https://github.com/sgillespie/untitled-functional-language
+homepage: https://github.com/sgillespie/thunkling
 license: MIT
 license-file: LICENSE
 author: Sean D Gillespie
@@ -34,11 +34,11 @@ library
   hs-source-dirs: src
   default-language: GHC2021
 
-executable untitledc
+executable thlc
   import: all
   main-is: Main.hs
   build-depends:
-    untitled-functional-language,
+    thunkling,
     optparse-applicative,
 
   hs-source-dirs: app
@@ -51,4 +51,4 @@ test-suite test
   hs-source-dirs: test
   main-is: Main.hs
   build-depends:
-    untitled-functional-language,
+    thunkling,
