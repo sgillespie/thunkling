@@ -32,4 +32,4 @@ jobs:
       - name: Run Nix checks
         run: |
           nix build .\#checks.x86_64-linux.formatting
-          nix build .\#checks.x86_64-linux.untitled-functional-language:test:test
+          nix build .\#checks.x86_64-linux.thunkling:test:test
