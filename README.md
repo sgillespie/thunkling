@@ -1,4 +1,4 @@
-# Untitled Functional Language
+# Thunkling
 
 A minimal lazy functional programming language inspired by System F and ML.
 
