@@ -1,5 +1,7 @@
 module Main where
 
+import Language.Thunkling (InputFile(..), OutputFile(..), compileProgram)
+
 import Options.Applicative (Parser)
 import Options.Applicative qualified as Opts
 
@@ -8,11 +10,6 @@ data Options = Options
     optOutputFile :: OutputFile
   }
 
-newtype InputFile = InputFile {unInputFile :: FilePath}
-  deriving stock (Eq, Show)
-
-newtype OutputFile = OutputFile {unOutputFile :: FilePath}
-  deriving stock (Eq, Show)
 
 main :: IO ()
 main = run =<< Opts.execParser parserInfo
@@ -23,7 +20,8 @@ main = run =<< Opts.execParser parserInfo
         <> Opts.progDesc "Compile thunkling programs"
 
 run :: Options -> IO ()
-run _ = pure ()
+run Options{..} = 
+  compileProgram optInputFile optOutputFile
 
 parseOpts :: Parser Options
 parseOpts =

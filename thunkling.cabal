@@ -28,10 +28,13 @@ common all
 
   default-extensions:
     DerivingStrategies
+    RecordWildCards
 
 library
   import: all
-  exposed-modules: MyLib
+  exposed-modules: 
+    Language.Thunkling
+    Language.Thunkling.Driver
   build-depends:
     megaparsec
 
