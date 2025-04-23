@@ -1,7 +1,7 @@
-module Language.Thunkling.Driver 
-  ( InputFile(..),
-    OutputFile(..),
-    compileProgram
+module Language.Thunkling.Driver
+  ( InputFile (..),
+    OutputFile (..),
+    compileProgram,
   ) where
 
 newtype InputFile = InputFile {unInputFile :: FilePath}

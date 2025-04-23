@@ -32,9 +32,10 @@ common all
 
 library
   import: all
-  exposed-modules: 
+  exposed-modules:
     Language.Thunkling
     Language.Thunkling.Driver
+
   build-depends:
     megaparsec
 
