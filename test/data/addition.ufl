@@ -1,0 +1,5 @@
+main : ()
+main = println (add 3 4)
+
+add : Int -> Int -> Int
+add x y = x + y
