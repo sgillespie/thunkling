@@ -1,14 +1,50 @@
 module Language.Thunkling.Driver
-  ( InputFile (..),
-    OutputFile (..),
-    compileProgram,
+  ( compileProgram,
   ) where
 
-newtype InputFile = InputFile {unInputFile :: FilePath}
-  deriving stock (Eq, Show)
+import Language.Thunkling.Config (InputFile (..), OutputFile (..))
+import Language.Thunkling.Errors (AppError (..))
 
-newtype OutputFile = OutputFile {unOutputFile :: FilePath}
-  deriving stock (Eq, Show)
+import Control.Exception (catch, throwIO, try)
+import Data.Text.IO (hPutStrLn)
+import System.Exit (ExitCode (..))
+import System.IO.Error (IOError)
 
 compileProgram :: InputFile -> OutputFile -> IO ()
-compileProgram _ _ = pure ()
+compileProgram inFile outFile = do
+  res <- try @SomeException (compileProgram' inFile outFile)
+  case res of
+    Right _ -> pure ()
+    Left err -> do
+      hPutStrLn stderr $ toText (displayException err)
+      exitWith (ExitFailure 1)
+
+compileProgram' :: InputFile -> OutputFile -> IO ()
+compileProgram' inFile outFile = do
+  -- Read inFile
+  text <- readInputFile inFile
+
+  -- TODO[sgillespie]:
+  --
+  --  1. Parse text
+  --  2. Typecheck
+  --  3. Desugar to SystemF
+  --  4. Add explicit Thunk/Forces
+  --  5. Generate LLVM
+
+  -- Write outFile
+  writeOutputFile outFile text
+
+readInputFile :: InputFile -> IO ByteString
+readInputFile inFile =
+  catch @IOError readFileBS' handleErr
+  where
+    readFileBS' = readFileBS $ unInputFile inFile
+    handleErr _ = throwIO $ NoInputFile inFile
+
+writeOutputFile :: OutputFile -> ByteString -> IO ()
+writeOutputFile outFile text =
+  catch @IOError writeFileBS' handleErr
+  where
+    writeFileBS' = writeFileBS (unOutputFile outFile) text
+    handleErr _ = throwIO $ NoOutputFile outFile

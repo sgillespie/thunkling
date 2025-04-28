@@ -34,7 +34,9 @@ library
   import: all
   exposed-modules:
     Language.Thunkling
+    Language.Thunkling.Config
     Language.Thunkling.Driver
+    Language.Thunkling.Errors
 
   build-depends:
     megaparsec
