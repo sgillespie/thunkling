@@ -1,8 +1,11 @@
 # Haskell
 dist-newstyle
+cabal.project.local
 
 # Nix
 .direnv
 .envrc
 result
 
+# Thunkling
+main
