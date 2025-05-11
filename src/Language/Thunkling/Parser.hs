@@ -84,21 +84,46 @@ mkTrivialError offset unexpected expected =
   where
     asNonEmptyBytes = fromList . ByteString.unpack . unName
 
+expr :: Parser (Expr 'Parsed)
+expr = app <|> var <|> literal
+
+app :: Parser (Expr 'Parsed)
+app = Parsec.try $ do
+  name <- identifier
+  args <- some expr
+
+  pure (App (ParsedAnn Nothing) name args)
+
+var :: Parser (Expr 'Parsed)
+var = Var (ParsedAnn Nothing) <$> identifier
+
+literal :: Parser (Expr 'Parsed)
+literal =
+  int
+    <|> boolean
+    <|> unit
+
+int :: Parser (Expr 'Parsed)
+int = LitInt (ParsedAnn Nothing) . read . decodeUtf8 . pack <$> some Byte.digitChar
+
+boolean :: Parser (Expr 'Parsed)
+boolean =
+  (symbol "True" $> litBool True)
+    <|> (symbol "False" $> litBool False)
+  where
+    litBool = LitBool (ParsedAnn Nothing)
+
+unit :: Parser (Expr 'Parsed)
+unit = symbol "()" $> LitUnit (ParsedAnn Nothing)
+
+space :: Parser ()
+space = Lex.space Byte.space1 (Lex.skipLineComment "--") empty
+
 identifier :: Parser Name
 identifier =
   lexeme $ mkName <$> Byte.letterChar <*> many Byte.alphaNumChar
   where
     mkName c cs = Name $ pack (c : cs)
-
-expr :: Parser (Expr 'Parsed)
-expr =
-  int
-
-int :: Parser (Expr 'Parsed)
-int = LitInt (ParsedAnn Nothing) . read . decodeUtf8 . pack <$> some Byte.digitChar
-
-space :: Parser ()
-space = Lex.space Byte.space1 (Lex.skipLineComment "--") empty
 
 lexeme :: Parser a -> Parser a
 lexeme = Lex.lexeme space

@@ -48,8 +48,11 @@ data ExprTy
   deriving (Eq, Show)
 
 data Expr (phase :: Phase) where
+  Var :: Ann phase -> Name -> Expr phase
+  App :: Ann phase -> Name -> [Expr phase] -> Expr phase
   LitInt :: Ann phase -> Int -> Expr phase
   LitBool :: Ann phase -> Bool -> Expr phase
+  LitUnit :: Ann phase -> Expr phase
 
 deriving instance Eq (Expr 'Parsed)
 deriving instance Show (Expr 'Parsed)
