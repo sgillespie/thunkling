@@ -29,8 +29,8 @@ common all
   default-extensions:
     DataKinds
     DerivingStrategies
-    RecordWildCards
     OverloadedStrings
+    RecordWildCards
     TypeFamilies
 
 library
@@ -46,7 +46,7 @@ library
   build-depends:
     bytestring,
     megaparsec,
-    parser-combinators
+    parser-combinators,
 
   hs-source-dirs: src
   default-language: GHC2021

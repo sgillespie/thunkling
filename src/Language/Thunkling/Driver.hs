@@ -7,9 +7,9 @@ import Language.Thunkling.Errors (AppError (..))
 
 import Control.Exception (catch, throwIO, try)
 import Data.Text.IO (hPutStrLn)
+import Language.Thunkling.Parser (parseProgram)
 import System.Exit (ExitCode (..))
 import System.IO.Error (IOError)
-import Language.Thunkling.Parser (parseProgram)
 
 compileProgram :: InputFile -> OutputFile -> IO ()
 compileProgram inFile outFile = do
@@ -29,7 +29,6 @@ compileProgram' inFile outFile = do
   case syn of
     Left err -> throwIO err
     Right syn' -> do
-
       -- TODO[sgillespie]:
       --
       --  1. Parse text

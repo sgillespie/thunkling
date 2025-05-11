@@ -32,8 +32,7 @@ newtype Program phase = Program {unProgram :: [TopLevelBind phase]}
 deriving instance Eq (Program 'Parsed)
 deriving instance Show (Program 'Parsed)
 
-data TopLevelBind (phase :: Phase)
-  = TopLevelBind
+data TopLevelBind (phase :: Phase) = TopLevelBind
   { bindName :: Name,
     bindAnn :: Ann phase,
     bindExpr :: Expr phase
