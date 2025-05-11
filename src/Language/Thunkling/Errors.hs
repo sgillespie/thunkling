@@ -18,3 +18,4 @@ instance Exception AppError
 instance Show AppError where
   show (NoInputFile (InputFile file)) = "Unable to open input file " <> file <> "!"
   show (NoOutputFile (OutputFile file)) = "Unable to write output file " <> file <> "!"
+

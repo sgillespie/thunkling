@@ -9,6 +9,7 @@ import Control.Exception (catch, throwIO, try)
 import Data.Text.IO (hPutStrLn)
 import System.Exit (ExitCode (..))
 import System.IO.Error (IOError)
+import Language.Thunkling.Parser (parseProgram)
 
 compileProgram :: InputFile -> OutputFile -> IO ()
 compileProgram inFile outFile = do
@@ -24,16 +25,21 @@ compileProgram' inFile outFile = do
   -- Read inFile
   text <- readInputFile inFile
 
-  -- TODO[sgillespie]:
-  --
-  --  1. Parse text
-  --  2. Typecheck
-  --  3. Desugar to SystemF
-  --  4. Add explicit Thunk/Forces
-  --  5. Generate LLVM
+  let syn = parseProgram inFile text
+  case syn of
+    Left err -> throwIO err
+    Right syn' -> do
 
-  -- Write outFile
-  writeOutputFile outFile text
+      -- TODO[sgillespie]:
+      --
+      --  1. Parse text
+      --  2. Typecheck
+      --  3. Desugar to SystemF
+      --  4. Add explicit Thunk/Forces
+      --  5. Generate LLVM
+
+      -- Write outFile
+      writeOutputFile outFile (show syn')
 
 readInputFile :: InputFile -> IO ByteString
 readInputFile inFile =

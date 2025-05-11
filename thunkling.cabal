@@ -27,8 +27,11 @@ common all
     relude,
 
   default-extensions:
+    DataKinds
     DerivingStrategies
     RecordWildCards
+    OverloadedStrings
+    TypeFamilies
 
 library
   import: all
@@ -37,9 +40,13 @@ library
     Language.Thunkling.Config
     Language.Thunkling.Driver
     Language.Thunkling.Errors
+    Language.Thunkling.Parser
+    Language.Thunkling.Syntax
 
   build-depends:
-    megaparsec
+    bytestring,
+    megaparsec,
+    parser-combinators
 
   hs-source-dirs: src
   default-language: GHC2021
