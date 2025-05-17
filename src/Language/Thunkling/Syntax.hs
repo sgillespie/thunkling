@@ -8,7 +8,7 @@ module Language.Thunkling.Syntax
     Expr (..),
   ) where
 
-newtype Name = Name {unName :: ByteString}
+newtype Name = Name {unName :: Text}
   deriving stock (Eq, Ord, Show)
   deriving newtype (IsString)
 

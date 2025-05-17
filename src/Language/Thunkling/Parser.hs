@@ -5,23 +5,21 @@ module Language.Thunkling.Parser
 import Language.Thunkling.Syntax
 
 import Control.Monad.Combinators as C
-import Data.ByteString (pack)
-import Data.ByteString qualified as ByteString
-import Data.Set (singleton)
+import Data.Set qualified as Set
+import Data.Text qualified as Text
 import Language.Thunkling.Config (InputFile (..))
-import Relude.Unsafe (read)
 import Text.Megaparsec (ParseErrorBundle, Parsec)
 import Text.Megaparsec qualified as Parsec
-import Text.Megaparsec.Byte qualified as Byte
-import Text.Megaparsec.Byte.Lexer qualified as Lex
+import Text.Megaparsec.Char qualified as Char
+import Text.Megaparsec.Char.Lexer qualified as Lex
 import Prelude hiding (many, some)
 
-type Parser = Parsec Void ByteString
-type ParseError = ParseErrorBundle ByteString Void
+type Parser = Parsec Void Text
+type ParseError = ParseErrorBundle Text Void
 
 parseProgram
   :: InputFile
-  -> ByteString
+  -> Text
   -> Either ParseError (Program 'Parsed)
 parseProgram (InputFile file) =
   Parsec.runParser program file
@@ -79,10 +77,12 @@ mkTrivialError offset unexpected expected =
   Parsec.parseError $
     Parsec.TrivialError
       offset
-      (Just $ Parsec.Tokens (asNonEmptyBytes unexpected))
-      (singleton $ Parsec.Tokens (asNonEmptyBytes expected))
+      (tokens unexpected)
+      (maybeToSet $ tokens expected)
   where
-    asNonEmptyBytes = fromList . ByteString.unpack . unName
+    tokens = fmap Parsec.Tokens . nonEmpty . Text.unpack . unName
+    maybeToSet (Just a) = Set.singleton a
+    maybeToSet Nothing = Set.empty
 
 expr :: Parser (Expr 'Parsed)
 expr = app <|> var <|> literal
@@ -104,7 +104,7 @@ literal =
     <|> unit
 
 int :: Parser (Expr 'Parsed)
-int = LitInt (ParsedAnn Nothing) . read . decodeUtf8 . pack <$> some Byte.digitChar
+int = LitInt (ParsedAnn Nothing) <$> Lex.decimal
 
 boolean :: Parser (Expr 'Parsed)
 boolean =
@@ -117,16 +117,16 @@ unit :: Parser (Expr 'Parsed)
 unit = symbol "()" $> LitUnit (ParsedAnn Nothing)
 
 space :: Parser ()
-space = Lex.space Byte.space1 (Lex.skipLineComment "--") empty
+space = Lex.space Char.space1 (Lex.skipLineComment "--") empty
 
 identifier :: Parser Name
 identifier =
-  lexeme $ mkName <$> Byte.letterChar <*> many Byte.alphaNumChar
+  lexeme $ mkName <$> Char.letterChar <*> many Char.alphaNumChar
   where
-    mkName c cs = Name $ pack (c : cs)
+    mkName c cs = Name $ c `Text.cons` Text.pack cs
 
 lexeme :: Parser a -> Parser a
 lexeme = Lex.lexeme space
 
-symbol :: ByteString -> Parser ByteString
+symbol :: Text -> Parser Text
 symbol = Lex.symbol space

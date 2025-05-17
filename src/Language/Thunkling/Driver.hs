@@ -40,9 +40,9 @@ compileProgram' inFile outFile = do
       -- Write outFile
       writeOutputFile outFile (show syn')
 
-readInputFile :: InputFile -> IO ByteString
+readInputFile :: InputFile -> IO Text
 readInputFile inFile =
-  catch @IOError readFileBS' handleErr
+  catch @IOError (decodeUtf8 <$> readFileBS') handleErr
   where
     readFileBS' = readFileBS $ unInputFile inFile
     handleErr _ = throwIO $ NoInputFile inFile
