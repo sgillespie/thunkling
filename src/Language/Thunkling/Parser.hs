@@ -25,7 +25,7 @@ parseProgram (InputFile file) =
   Parsec.runParser program file
 
 program :: Parser (Program 'Parsed)
-program = Program <$> (space *> topLevelBinds <* space)
+program = Program <$> (space *> topLevelBinds)
 
 topLevelBinds :: Parser [TopLevelBind 'Parsed]
 topLevelBinds = many topLevelBind
@@ -101,10 +101,11 @@ literal :: Parser (Expr 'Parsed)
 literal =
   int
     <|> boolean
+    <|> string
     <|> unit
 
 int :: Parser (Expr 'Parsed)
-int = LitInt (ParsedAnn Nothing) <$> Lex.decimal
+int = LitInt (ParsedAnn Nothing) <$> intLiteral
 
 boolean :: Parser (Expr 'Parsed)
 boolean =
@@ -113,11 +114,11 @@ boolean =
   where
     litBool = LitBool (ParsedAnn Nothing)
 
+string :: Parser (Expr 'Parsed)
+string = LitString (ParsedAnn Nothing) <$> stringLiteral
+
 unit :: Parser (Expr 'Parsed)
 unit = symbol "()" $> LitUnit (ParsedAnn Nothing)
-
-space :: Parser ()
-space = Lex.space Char.space1 (Lex.skipLineComment "--") empty
 
 identifier :: Parser Name
 identifier =
@@ -125,8 +126,23 @@ identifier =
   where
     mkName c cs = Name $ c `Text.cons` Text.pack cs
 
+intLiteral :: Parser Int
+intLiteral = lexeme Lex.decimal
+
+stringLiteral :: Parser Text
+stringLiteral = lexeme $ quote *> manyUntilText Lex.charLiteral quote
+  where
+    manyUntilText :: Parser Char -> Parser end -> Parser Text
+    manyUntilText p end = Text.pack <$> manyTill p end
+
+quote :: Parser Char
+quote = Char.char '\"'
+
 lexeme :: Parser a -> Parser a
 lexeme = Lex.lexeme space
 
 symbol :: Text -> Parser Text
 symbol = Lex.symbol space
+
+space :: Parser ()
+space = Lex.space Char.space1 (Lex.skipLineComment "--") empty

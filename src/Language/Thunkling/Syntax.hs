@@ -52,6 +52,7 @@ data Expr (phase :: Phase) where
   App :: Ann phase -> Name -> [Expr phase] -> Expr phase
   LitInt :: Ann phase -> Int -> Expr phase
   LitBool :: Ann phase -> Bool -> Expr phase
+  LitString :: Ann phase -> Text -> Expr phase
   LitUnit :: Ann phase -> Expr phase
 
 deriving instance Eq (Expr 'Parsed)
