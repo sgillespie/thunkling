@@ -25,15 +25,15 @@ parseProgram (InputFile file) =
   Parsec.runParser program file
 
 program :: Parser (Program 'Parsed)
-program = Program <$> (space *> topLevelBinds)
+program = Program <$> (space *> topLevelBinds <* Parsec.eof)
 
 topLevelBinds :: Parser [TopLevelBind 'Parsed]
-topLevelBinds = many topLevelBind
+topLevelBinds = sepEndBy topLevelBind (Char.eol *> vspace)
 
 topLevelBind :: Parser (TopLevelBind 'Parsed)
 topLevelBind = do
   -- Parse the signature
-  sig <- optional (Parsec.try signature)
+  sig <- optional $ Parsec.try signature <* eol
   -- Parse the function name
   (name, expr') <- bind sig
 
@@ -144,5 +144,14 @@ lexeme = Lex.lexeme space
 symbol :: Text -> Parser Text
 symbol = Lex.symbol space
 
+eol :: Parser ()
+eol = Char.eol *> vspace
+
 space :: Parser ()
-space = Lex.space Char.space1 (Lex.skipLineComment "--") empty
+space = space' Char.hspace1
+
+vspace :: Parser ()
+vspace = space' Char.space1
+
+space' :: Parser () -> Parser ()
+space' p = Lex.space p (Lex.skipLineComment "--") empty
