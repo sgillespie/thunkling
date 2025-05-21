@@ -5,6 +5,7 @@ module Language.Thunkling.Parser
 import Language.Thunkling.Syntax
 
 import Control.Monad.Combinators as C
+import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Language.Thunkling.Config (InputFile (..))
@@ -35,29 +36,39 @@ topLevelBind = do
   -- Parse the signature
   sig <- optional $ Parsec.try signature <* eol
   -- Parse the function name
-  (name, expr') <- bind sig
+  (name, params, expr') <- bind sig
 
   let
     ann = ParsedAnn (snd <$> sig)
 
-  pure $ TopLevelBind name ann expr'
+  pure $ TopLevelBind name ann params expr'
 
 signature :: Parser (Name, ExprTy)
 signature = do
   (,) <$> (identifier <* symbol ":") <*> exprTy
 
 exprTy :: Parser ExprTy
-exprTy =
+exprTy = Parsec.try arrowTy <|> simpleTy
+
+arrowTy :: Parser ExprTy
+arrowTy =
+  TyArrow
+    <$> (simpleTy <* symbol "->")
+    <*> exprTy
+
+simpleTy :: Parser ExprTy
+simpleTy =
   (symbol "()" $> TyUnit)
     <|> (symbol "Int" $> TyInt)
     <|> (symbol "Bool" $> TyBool)
 
 bind
   :: Maybe (Name, ExprTy)
-  -> Parser (Name, Expr 'Parsed)
-bind ty =
-  (,)
+  -> Parser (Name, [Param], Expr 'Parsed)
+bind ty = do
+  (,,)
     <$> bindName
+    <*> many bindParam
     <*> (symbol "=" *> expr)
   where
     bindName :: Parser Name
@@ -72,6 +83,8 @@ bind ty =
           | name /= expectedName -> mkTrivialError offset name expectedName
         _ -> pure name
 
+    bindParam = Param <$> identifier
+
 mkTrivialError :: Int -> Name -> Name -> Parser a
 mkTrivialError offset unexpected expected =
   Parsec.parseError $
@@ -85,14 +98,24 @@ mkTrivialError offset unexpected expected =
     maybeToSet Nothing = Set.empty
 
 expr :: Parser (Expr 'Parsed)
-expr = app <|> var <|> literal
+expr = makeExprParser term table
+  where
+    table =
+      [ [ appOp (App $ ParsedAnn Nothing)
+        ],
+        [ binOp "+" (Add $ ParsedAnn Nothing),
+          binOp "-" (Sub $ ParsedAnn Nothing)
+        ]
+      ]
 
-app :: Parser (Expr 'Parsed)
-app = Parsec.try $ do
-  name <- identifier
-  args <- some expr
+    binOp name f = InfixL (f <$ symbol name)
+    appOp f = InfixL (pure f)
 
-  pure (App (ParsedAnn Nothing) name args)
+term :: Parser (Expr 'Parsed)
+term =
+  var
+    <|> literal
+    <|> betweenParens expr
 
 var :: Parser (Expr 'Parsed)
 var = Var (ParsedAnn Nothing) <$> identifier
@@ -134,6 +157,9 @@ stringLiteral = lexeme $ quote *> manyUntilText Lex.charLiteral quote
   where
     manyUntilText :: Parser Char -> Parser end -> Parser Text
     manyUntilText p end = Text.pack <$> manyTill p end
+
+betweenParens :: Parser a -> Parser a
+betweenParens = between "(" ")"
 
 quote :: Parser Char
 quote = Char.char '\"'

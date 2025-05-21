@@ -4,6 +4,7 @@ module Language.Thunkling.Syntax
     Ann (..),
     Program (..),
     TopLevelBind (..),
+    Param (..),
     ExprTy (..),
     Expr (..),
   ) where
@@ -35,21 +36,29 @@ deriving instance Show (Program 'Parsed)
 data TopLevelBind (phase :: Phase) = TopLevelBind
   { bindName :: Name,
     bindAnn :: Ann phase,
+    bindParams :: [Param],
     bindExpr :: Expr phase
   }
 
 deriving instance Eq (TopLevelBind 'Parsed)
 deriving instance Show (TopLevelBind 'Parsed)
 
+newtype Param = Param {unParam :: Name}
+  deriving stock (Eq, Ord, Show)
+  deriving newtype (IsString)
+
 data ExprTy
-  = TyInt
+  = TyArrow ExprTy ExprTy
+  | TyInt
   | TyBool
   | TyUnit
   deriving (Eq, Show)
 
 data Expr (phase :: Phase) where
   Var :: Ann phase -> Name -> Expr phase
-  App :: Ann phase -> Name -> [Expr phase] -> Expr phase
+  App :: Ann phase -> Expr phase -> Expr phase -> Expr phase
+  Add :: Ann phase -> Expr phase -> Expr phase -> Expr phase
+  Sub :: Ann phase -> Expr phase -> Expr phase -> Expr phase
   LitInt :: Ann phase -> Int -> Expr phase
   LitBool :: Ann phase -> Bool -> Expr phase
   LitString :: Ann phase -> Text -> Expr phase
