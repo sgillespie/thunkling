@@ -57,6 +57,7 @@ data ExprTy
 data Expr (phase :: Phase) where
   Var :: Ann phase -> Name -> Expr phase
   App :: Ann phase -> Expr phase -> Expr phase -> Expr phase
+  Abs :: Ann phase -> Param -> Expr phase -> Expr phase
   Add :: Ann phase -> Expr phase -> Expr phase -> Expr phase
   Sub :: Ann phase -> Expr phase -> Expr phase -> Expr phase
   LitInt :: Ann phase -> Int -> Expr phase

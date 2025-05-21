@@ -114,11 +114,18 @@ expr = makeExprParser term table
 term :: Parser (Expr 'Parsed)
 term =
   var
+    <|> abstraction
     <|> literal
     <|> betweenParens expr
 
 var :: Parser (Expr 'Parsed)
 var = Var (ParsedAnn Nothing) <$> identifier
+
+abstraction :: Parser (Expr 'Parsed)
+abstraction = do
+  Abs (ParsedAnn Nothing)
+    <$> (symbol "\\" *> (Param <$> identifier))
+    <*> (symbol "." *> expr)
 
 literal :: Parser (Expr 'Parsed)
 literal =
@@ -159,7 +166,7 @@ stringLiteral = lexeme $ quote *> manyUntilText Lex.charLiteral quote
     manyUntilText p end = Text.pack <$> manyTill p end
 
 betweenParens :: Parser a -> Parser a
-betweenParens = between "(" ")"
+betweenParens = lexeme . between "(" ")"
 
 quote :: Parser Char
 quote = Char.char '\"'
