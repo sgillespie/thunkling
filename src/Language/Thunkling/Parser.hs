@@ -6,6 +6,7 @@ import Language.Thunkling.Syntax
 
 import Control.Monad.Combinators as C
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
+import Data.Foldable (foldr1)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Language.Thunkling.Config (InputFile (..))
@@ -48,7 +49,18 @@ signature = do
   (,) <$> (identifier <* symbol ":") <*> exprTy
 
 exprTy :: Parser ExprTy
-exprTy = Parsec.try arrowTy <|> simpleTy
+exprTy = tyAbs <|> tyTerm
+
+tyAbs :: Parser ExprTy
+tyAbs = 
+  mkTyAbs 
+    <$> (symbol "forall" *> many identifier <* symbol ".")
+    <*> tyTerm
+  where
+    mkTyAbs params body = foldr (TyAbs . Param) body params
+
+tyTerm :: Parser ExprTy
+tyTerm = Parsec.try arrowTy <|> simpleTy
 
 arrowTy :: Parser ExprTy
 arrowTy =
@@ -61,6 +73,7 @@ simpleTy =
   (symbol "()" $> TyUnit)
     <|> (symbol "Int" $> TyInt)
     <|> (symbol "Bool" $> TyBool)
+    <|> (TyVar <$> identifier)
 
 bind
   :: Maybe (Name, ExprTy)

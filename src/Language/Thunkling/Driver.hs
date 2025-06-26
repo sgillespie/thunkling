@@ -31,7 +31,6 @@ compileProgram' inFile outFile = do
     Right syn' -> do
       -- TODO[sgillespie]:
       --
-      --  1. Parse text
       --  2. Typecheck
       --  3. Desugar to SystemF
       --  4. Add explicit Thunk/Forces

@@ -49,6 +49,8 @@ newtype Param = Param {unParam :: Name}
 
 data ExprTy
   = TyArrow ExprTy ExprTy
+  | TyAbs Param ExprTy
+  | TyVar Name
   | TyInt
   | TyBool
   | TyUnit
