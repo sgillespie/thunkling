@@ -42,10 +42,14 @@ library
     Language.Thunkling.Errors
     Language.Thunkling.Parser
     Language.Thunkling.Syntax
+    Language.Thunkling.Typecheck
 
   build-depends:
     bytestring,
+    containers,
     megaparsec,
+    mtl,
+    microlens,
     parser-combinators,
 
   hs-source-dirs: src

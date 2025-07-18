@@ -1,12 +1,12 @@
 module Language.Thunkling.Parser
-  ( parseProgram,
+  ( ParseError,
+    parseProgram,
   ) where
 
 import Language.Thunkling.Syntax
 
 import Control.Monad.Combinators as C
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
-import Data.Foldable (foldr1)
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Language.Thunkling.Config (InputFile (..))
@@ -53,11 +53,12 @@ exprTy = tyAbs <|> tyTerm
 
 tyAbs :: Parser ExprTy
 tyAbs = 
-  mkTyAbs 
-    <$> (symbol "forall" *> many identifier <* symbol ".")
-    <*> tyTerm
+  fmap TyAbs $ 
+    Forall
+      <$> (symbol "forall" *> many tyVar <* symbol ".")
+      <*> tyTerm
   where
-    mkTyAbs params body = foldr (TyAbs . Param) body params
+    tyVar = Tv <$> identifier
 
 tyTerm :: Parser ExprTy
 tyTerm = Parsec.try arrowTy <|> simpleTy
@@ -106,7 +107,7 @@ mkTrivialError offset unexpected expected =
       (tokens unexpected)
       (maybeToSet $ tokens expected)
   where
-    tokens = fmap Parsec.Tokens . nonEmpty . Text.unpack . unName
+    tokens = fmap Parsec.Tokens . nonEmpty . Text.unpack
     maybeToSet (Just a) = Set.singleton a
     maybeToSet Nothing = Set.empty
 
@@ -132,11 +133,11 @@ term =
     <|> betweenParens expr
 
 var :: Parser (Expr 'Parsed)
-var = Var (ParsedAnn Nothing) <$> identifier
+var = Var parsedAnnEmpty . V <$> identifier
 
 abstraction :: Parser (Expr 'Parsed)
 abstraction = do
-  Abs (ParsedAnn Nothing)
+  Abs parsedAnnEmpty
     <$> (symbol "\\" *> (Param <$> identifier))
     <*> (symbol "." *> expr)
 
@@ -148,26 +149,26 @@ literal =
     <|> unit
 
 int :: Parser (Expr 'Parsed)
-int = LitInt (ParsedAnn Nothing) <$> intLiteral
+int = LitInt parsedAnnEmpty <$> intLiteral
 
 boolean :: Parser (Expr 'Parsed)
 boolean =
   (symbol "True" $> litBool True)
     <|> (symbol "False" $> litBool False)
   where
-    litBool = LitBool (ParsedAnn Nothing)
+    litBool = LitBool parsedAnnEmpty
 
 string :: Parser (Expr 'Parsed)
-string = LitString (ParsedAnn Nothing) <$> stringLiteral
+string = LitString parsedAnnEmpty <$> stringLiteral
 
 unit :: Parser (Expr 'Parsed)
-unit = symbol "()" $> LitUnit (ParsedAnn Nothing)
+unit = symbol "()" $> LitUnit parsedAnnEmpty
 
 identifier :: Parser Name
 identifier =
   lexeme $ mkName <$> Char.letterChar <*> many Char.alphaNumChar
   where
-    mkName c cs = Name $ c `Text.cons` Text.pack cs
+    mkName c cs = c `Text.cons` Text.pack cs
 
 intLiteral :: Parser Int
 intLiteral = lexeme Lex.decimal

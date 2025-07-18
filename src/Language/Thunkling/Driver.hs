@@ -10,6 +10,7 @@ import Data.Text.IO (hPutStrLn)
 import Language.Thunkling.Parser (parseProgram)
 import System.Exit (ExitCode (..))
 import System.IO.Error (IOError)
+import Language.Thunkling.Typecheck (typecheck)
 
 compileProgram :: InputFile -> OutputFile -> IO ()
 compileProgram inFile outFile = do
@@ -25,19 +26,22 @@ compileProgram' inFile outFile = do
   -- Read inFile
   text <- readInputFile inFile
 
-  let syn = parseProgram inFile text
-  case syn of
-    Left err -> throwIO err
-    Right syn' -> do
-      -- TODO[sgillespie]:
-      --
-      --  2. Typecheck
-      --  3. Desugar to SystemF
-      --  4. Add explicit Thunk/Forces
-      --  5. Generate LLVM
+  let res = do
+        parsed <- first ParseError (parseProgram inFile text)
+        typechecked <- first TypeError (typecheck parsed)
 
-      -- Write outFile
-      writeOutputFile outFile (show syn')
+        -- TODO[sgillespie]:
+        --
+        --  3. Desugar to SystemF
+        --  4. Add explicit Thunk/Forces
+        --  5. Generate LLVM
+
+        Right typechecked
+
+  either 
+    throwIO 
+    (writeOutputFile outFile . show) 
+    res
 
 readInputFile :: InputFile -> IO Text
 readInputFile inFile =

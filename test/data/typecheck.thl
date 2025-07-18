@@ -1,0 +1,13 @@
+id a = a
+
+inc x = x + 1
+
+dec x = x - 1
+
+unit = ()
+
+z = 0
+
+sempty = ""
+
+app f x = f x
