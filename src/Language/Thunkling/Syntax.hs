@@ -6,16 +6,13 @@ module Language.Thunkling.Syntax
     parsedAnnEmpty,
     Program (..),
     TopLevelBind (..),
-    Param (..),
     TyScheme (..),
+    Param (..),
     ExprTy (..),
     TyVar (..),
     Expr (..),
     Var (..),
-    exprAnnL,
   ) where
-
-import Lens.Micro
 
 type Name = Text
 
@@ -53,8 +50,7 @@ deriving instance Eq (Program 'Typechecked)
 deriving instance Show (Program 'Typechecked)
 
 data TopLevelBind (phase :: Phase) = TopLevelBind
-  { bindName :: Name,
-    bindAnn :: Ann phase,
+  { bindVar :: Var (Ann phase),
     bindParams :: [Param],
     bindExpr :: Expr phase
   }
@@ -86,49 +82,22 @@ data ExprTy
   deriving (Eq, Show)
 
 data Expr (phase :: Phase) where
-  Var :: Ann phase -> Var -> Expr phase
-  App :: Ann phase -> Expr phase -> Expr phase -> Expr phase
-  Abs :: Ann phase -> Param -> Expr phase -> Expr phase
-  Add :: Ann phase -> Expr phase -> Expr phase -> Expr phase
-  Sub :: Ann phase -> Expr phase -> Expr phase -> Expr phase
-  LitInt :: Ann phase -> Int -> Expr phase
-  LitBool :: Ann phase -> Bool -> Expr phase
-  LitString :: Ann phase -> Text -> Expr phase
-  LitUnit :: Ann phase -> Expr phase
+  Var :: Var (Ann phase) -> Expr phase
+  App :: Expr phase -> Expr phase -> Expr phase
+  Abs :: Var (Ann phase) -> Expr phase -> Expr phase
+  LitInt :: Int -> Expr phase
+  LitBool :: Bool -> Expr phase
+  LitString :: Text -> Expr phase
+  LitUnit :: Expr phase
 
 deriving instance Eq (Expr 'Parsed)
 deriving instance Show (Expr 'Parsed)
 deriving instance Eq (Expr 'Typechecked)
 deriving instance Show (Expr 'Typechecked)
 
-newtype Var = V {unV :: Name}
+data Var ty = V 
+  { vName :: Name,
+    vType :: ty
+  }
   deriving stock (Eq, Ord, Show)
-  deriving newtype (IsString)
-
-exprAnnL :: Lens' (Expr phase) (Ann phase)
-exprAnnL = lens getAnn setAnn
-  where
-    getAnn expr = 
-      case expr of
-        Var ann _ -> ann
-        App ann _ _ -> ann
-        Abs ann _ _ -> ann
-        Add ann _ _ -> ann
-        Sub ann _ _ -> ann
-        LitInt ann _ -> ann
-        LitBool ann _ -> ann
-        LitString ann _ -> ann
-        LitUnit ann -> ann
-
-    setAnn expr ann = 
-      case expr of
-        Var _ v -> Var ann v
-        App _ e1 e2 -> App ann e1 e2
-        Abs _ n body -> Abs ann n body
-        Add _ e1 e2 -> Add ann e1 e2
-        Sub _ e1 e2 -> Sub ann e1 e2
-        LitInt _ i -> LitInt ann i
-        LitBool _ b -> LitBool ann b
-        LitString _ s -> LitString ann s
-        LitUnit _ -> LitUnit ann
 

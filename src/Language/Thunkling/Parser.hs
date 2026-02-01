@@ -42,7 +42,7 @@ topLevelBind = do
   let
     ann = ParsedAnn (snd <$> sig)
 
-  pure $ TopLevelBind name ann params expr'
+  pure $ TopLevelBind (name{vType = ann}) params expr'
 
 signature :: Parser (Name, ExprTy)
 signature = do
@@ -52,8 +52,8 @@ exprTy :: Parser ExprTy
 exprTy = tyAbs <|> tyTerm
 
 tyAbs :: Parser ExprTy
-tyAbs = 
-  fmap TyAbs $ 
+tyAbs =
+  fmap TyAbs $
     Forall
       <$> (symbol "forall" *> many tyVar <* symbol ".")
       <*> tyTerm
@@ -78,14 +78,14 @@ simpleTy =
 
 bind
   :: Maybe (Name, ExprTy)
-  -> Parser (Name, [Param], Expr 'Parsed)
+  -> Parser (Var (Ann Parsed), [Param], Expr 'Parsed)
 bind ty = do
   (,,)
     <$> bindName
     <*> many bindParam
     <*> (symbol "=" *> expr)
   where
-    bindName :: Parser Name
+    bindName :: Parser (Var (Ann Parsed))
     bindName = do
       -- Set a marker for the error, if necessary
       offset <- Parsec.getOffset
@@ -95,7 +95,7 @@ bind ty = do
       case ty of
         Just (expectedName, _)
           | name /= expectedName -> mkTrivialError offset name expectedName
-        _ -> pure name
+        _ -> pure $ V name parsedAnnEmpty
 
     bindParam = Param <$> identifier
 
@@ -115,15 +115,18 @@ expr :: Parser (Expr 'Parsed)
 expr = makeExprParser term table
   where
     table =
-      [ [ appOp (App $ ParsedAnn Nothing)
+      [ [ appOp App
         ],
-        [ binOp "+" (Add $ ParsedAnn Nothing),
-          binOp "-" (Sub $ ParsedAnn Nothing)
+        [ binOp "*",
+          binOp "/",
+          binOp "+",
+          binOp "-"
         ]
       ]
 
-    binOp name f = InfixL (f <$ symbol name)
     appOp f = InfixL (pure f)
+    binOp name = InfixL (binApp name <$ symbol name) 
+    binApp fname = App . App (Var $ V fname parsedAnnEmpty)
 
 term :: Parser (Expr 'Parsed)
 term =
@@ -133,12 +136,12 @@ term =
     <|> betweenParens expr
 
 var :: Parser (Expr 'Parsed)
-var = Var parsedAnnEmpty . V <$> identifier
+var = Var . flip V parsedAnnEmpty <$> identifier
 
 abstraction :: Parser (Expr 'Parsed)
 abstraction = do
-  Abs parsedAnnEmpty
-    <$> (symbol "\\" *> (Param <$> identifier))
+  Abs
+    <$> (symbol "\\" *> (flip V parsedAnnEmpty <$> identifier))
     <*> (symbol "." *> expr)
 
 literal :: Parser (Expr 'Parsed)
@@ -149,20 +152,20 @@ literal =
     <|> unit
 
 int :: Parser (Expr 'Parsed)
-int = LitInt parsedAnnEmpty <$> intLiteral
+int = LitInt <$> intLiteral
 
 boolean :: Parser (Expr 'Parsed)
 boolean =
   (symbol "True" $> litBool True)
     <|> (symbol "False" $> litBool False)
   where
-    litBool = LitBool parsedAnnEmpty
+    litBool = LitBool
 
 string :: Parser (Expr 'Parsed)
-string = LitString parsedAnnEmpty <$> stringLiteral
+string = LitString <$> stringLiteral
 
 unit :: Parser (Expr 'Parsed)
-unit = symbol "()" $> LitUnit parsedAnnEmpty
+unit = symbol "()" $> LitUnit
 
 identifier :: Parser Name
 identifier =

@@ -9,7 +9,6 @@ import Control.Monad.Except (Except, MonadError (..), runExcept)
 import Control.Monad.RWS (MonadWriter (..), RWST, evalRWST)
 import Data.Map qualified as Map
 import Data.Text qualified as Text
-import Lens.Micro
 import Text.Show (Show (..))
 import Relude.Unsafe ((!!))
 import Data.Traversable (for)
@@ -34,22 +33,27 @@ newtype Infer a
       MonadWriter [TyConstraint]
     )
 
-newtype TyEnv = TyEnv {unTyEnv :: Map Var TyScheme}
+newtype TyEnv = TyEnv {unTyEnv :: Map Name TyScheme}
   deriving stock (Eq, Show)
 
 emptyTyEnv :: TyEnv
-emptyTyEnv = TyEnv Map.empty
+emptyTyEnv = 
+  TyEnv $
+    Map.fromList
+      [ ("+", Forall [] (TyInt `TyArrow` (TyInt `TyArrow` TyInt))),
+        ("println", Forall [] (TyString `TyArrow` TyUnit))
+      ]
 
-extendTyEnv :: TyEnv -> (Var, TyScheme) -> TyEnv
+extendTyEnv :: TyEnv -> (Name, TyScheme) -> TyEnv
 extendTyEnv (TyEnv env) (v, scheme) = TyEnv $ Map.insert v scheme env
 
-removeTyEnv :: TyEnv -> Var -> TyEnv
+removeTyEnv :: TyEnv -> Name -> TyEnv
 removeTyEnv (TyEnv env) v = TyEnv (Map.delete v env)
 
-lookupTyEnv :: TyEnv -> Var -> Maybe TyScheme
+lookupTyEnv :: TyEnv -> Name -> Maybe TyScheme
 lookupTyEnv env = flip Map.lookup (unTyEnv env)
 
-inEnv :: (Var, TyScheme) -> Infer a -> Infer a
+inEnv :: (Name, TyScheme) -> Infer a -> Infer a
 inEnv (var, scheme) = local addScope
   where addScope env = extendTyEnv (removeTyEnv env var) (var, scheme)
 
@@ -75,12 +79,12 @@ fresh = do
     letters = concatMap (`replicateM` ['a' .. 'z']) [1 ..]
 
 data TypeError
-  = UnboundVariable Var
+  = UnboundVariable Name
   | Impossible
   deriving stock (Eq)
 
 instance Show TypeError where
-  show (UnboundVariable (V n)) =
+  show (UnboundVariable n) =
     "Variable not in scope: " <> Text.unpack n
   show Impossible =
     "Impossible error: This indicates a bug in the compiler's logic. Please submit a bug"
@@ -102,18 +106,22 @@ typecheck (Program binds) = do
 
 inferTopBind :: TopLevelBind 'Parsed -> Infer (TopLevelBind 'Typechecked)
 inferTopBind TopLevelBind{..} = do
+  let V varName _ = bindVar
+
   -- Generate a fresh type variable for each param
   params' <- for bindParams $ \param -> do
     tv <- fresh
     pure (coerce param, tv)
 
   -- Add the params with their types to the type environment, and run inference
-  (bodyTy, bindExpr') <- inferBindExpr' params' (inferExpr' bindExpr)
+  bindExpr' <- inferBindExpr' params' (inferExpr bindExpr)
+  bodyTy <- typeOf bindExpr'
+
+  let varTy = TypedAnn $ inferTopTy (map snd params') bodyTy
 
   pure $
     TopLevelBind
-      { bindName = bindName,
-        bindAnn = TypedAnn $ inferTopTy (map snd params') bodyTy,
+      { bindVar = V varName varTy,
         bindParams = bindParams,
         bindExpr = bindExpr'
       }
@@ -134,42 +142,53 @@ inferExpr expr = do
   env <- ask
 
   case expr of
-    Var _ v -> do
+    Var (V v _) -> do
       maybe
         (throwError $ UnboundVariable v)
-        (pure . flip Var v . TypedAnn . TyAbs)
+        ( \t -> pure $ Var $ V v (TypedAnn $ TyAbs t))
         (env `lookupTyEnv` v)
-    App _ e1 e2 -> do
-      (t1, e1') <- inferExpr' e1
-      (t2, e2') <- inferExpr' e2
+    App e1 e2 -> do
+      e1' <- inferExpr e1
+      e2' <- inferExpr e2
+      t1 <- typeOf e1'
+      t2 <- typeOf e2'
       tv <- fresh
 
       unify t1 (t2 `TyArrow` tv)
 
-      pure $ App (TypedAnn tv) e1' e2'
-    Abs _ n body -> do
+      pure $ App e1' e2'
+    Abs (V n _) body -> do
       tv <- fresh
-      (tyBody, body') <- (coerce n, Forall [] tv) `inEnv` inferExpr' body
+      body' <- (coerce n, Forall [] tv) `inEnv` inferExpr body
 
-      pure $ Abs (TypedAnn $ tv `TyArrow` tyBody) n body'
-    Add _ e1 e2 -> do
-      inferBinOp e1 e2 (Add . TypedAnn)
-    Sub _ e1 e2 -> do
-      inferBinOp e1 e2 (Sub . TypedAnn)
-    LitInt _ i ->
-      pure $ LitInt (TypedAnn TyInt) i
-    LitBool _ b ->
-      pure $ LitBool (TypedAnn TyBool) b
-    LitString _ s ->
-      pure $ LitString (TypedAnn TyString) s
-    LitUnit _ ->
-      pure $ LitUnit (TypedAnn TyUnit)
+      tyBody <- typeOf body'
 
-inferExpr' :: Expr 'Parsed -> Infer (ExprTy, Expr 'Typechecked)
-inferExpr' expr = do
-  expr' <- inferExpr expr
-  let (TypedAnn ty) = expr' ^. exprAnnL
-  pure (ty, expr')
+      let v' = V n (TypedAnn $ tv `TyArrow` tyBody)
+
+      pure $ Abs v' body'
+    LitInt i -> pure (LitInt i)
+    LitBool b -> pure (LitBool b)
+    LitString s -> pure (LitString s)
+    LitUnit -> pure LitUnit
+
+typeOf :: Expr 'Typechecked -> Infer ExprTy
+typeOf expr = do
+  case expr of
+    Var (V _ (TypedAnn t)) -> pure t
+    App e1 _ -> do
+      t1 <- typeOf e1
+      case t1 of
+        TyAbs (Forall [] (_ `TyArrow` t2')) -> pure t2'
+        _ `TyArrow` t2' -> pure t2'
+        _ -> 
+          traceShow 
+            t1
+            (throwError Impossible)
+    Abs (V _ (TypedAnn varTy)) body -> TyArrow varTy <$> typeOf body
+    LitInt _ -> pure TyInt
+    LitBool _ -> pure TyBool
+    LitString _ -> pure TyString
+    LitUnit -> pure TyUnit
 
 inferBinOp 
   :: Expr 'Parsed 
@@ -181,8 +200,10 @@ inferBinOp
      )
   -> Infer a
 inferBinOp e1 e2 f = do
-  (t1, e1') <- inferExpr' e1
-  (t2, e2') <- inferExpr' e2
+  e1' <- inferExpr e1
+  e2' <- inferExpr e2
+  t1 <- typeOf e1'
+  t2 <- typeOf e2'
 
   tv <- fresh
 

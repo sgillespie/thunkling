@@ -49,7 +49,6 @@ library
     containers,
     megaparsec,
     mtl,
-    microlens,
     parser-combinators,
 
   hs-source-dirs: src
