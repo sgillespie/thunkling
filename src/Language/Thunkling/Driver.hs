@@ -11,6 +11,7 @@ import Language.Thunkling.Parser (parseProgram)
 import System.Exit (ExitCode (..))
 import System.IO.Error (IOError)
 import Language.Thunkling.Typecheck (typecheck)
+import Language.Thunkling.Pretty (showProgramParsed, showProgramTypechecked)
 
 compileProgram :: InputFile -> OutputFile -> IO ()
 compileProgram inFile outFile = do
@@ -36,11 +37,12 @@ compileProgram' inFile outFile = do
         --  4. Add explicit Thunk/Forces
         --  5. Generate LLVM
 
-        Right typechecked
+        -- Dump results
+        Right (showProgramTypechecked typechecked)
 
   either 
     throwIO 
-    (writeOutputFile outFile . show) 
+    (writeOutputFile outFile . encodeUtf8) 
     res
 
 readInputFile :: InputFile -> IO Text

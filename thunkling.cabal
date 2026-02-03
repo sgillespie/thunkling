@@ -41,6 +41,7 @@ library
     Language.Thunkling.Driver
     Language.Thunkling.Errors
     Language.Thunkling.Parser
+    Language.Thunkling.Pretty
     Language.Thunkling.Syntax
     Language.Thunkling.Typecheck
 
@@ -50,6 +51,7 @@ library
     megaparsec,
     mtl,
     parser-combinators,
+    prettyprinter,
 
   hs-source-dirs: src
   default-language: GHC2021
