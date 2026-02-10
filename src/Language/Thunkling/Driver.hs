@@ -2,47 +2,60 @@ module Language.Thunkling.Driver
   ( compileProgram,
   ) where
 
-import Language.Thunkling.Config (InputFile (..), OutputFile (..))
+import Language.Thunkling.Config
+  ( DumpProgramParsed (..),
+    DumpProgramTypechecked (..),
+    InputFile (..),
+    Opts (..),
+    OutputFile (..),
+  )
 import Language.Thunkling.Errors (AppError (..))
 
 import Control.Exception (catch, throwIO, try)
 import Data.Text.IO (hPutStrLn)
 import Language.Thunkling.Parser (parseProgram)
+import Language.Thunkling.Pretty (showProgramParsed, showProgramTypechecked)
+import Language.Thunkling.Typecheck (typecheck)
 import System.Exit (ExitCode (..))
 import System.IO.Error (IOError)
-import Language.Thunkling.Typecheck (typecheck)
-import Language.Thunkling.Pretty (showProgramParsed, showProgramTypechecked)
 
-compileProgram :: InputFile -> OutputFile -> IO ()
-compileProgram inFile outFile = do
-  res <- try @SomeException (compileProgram' inFile outFile)
+compileProgram :: InputFile -> OutputFile -> Opts -> IO ()
+compileProgram inFile outFile opts = do
+  res <- try @SomeException (compileProgram' inFile outFile opts)
   case res of
     Right _ -> pure ()
     Left err -> do
       hPutStrLn stderr $ toText (displayException err)
       exitWith (ExitFailure 1)
 
-compileProgram' :: InputFile -> OutputFile -> IO ()
-compileProgram' inFile outFile = do
+compileProgram' :: InputFile -> OutputFile -> Opts -> IO ()
+compileProgram' inFile outFile Opts{..} = do
   -- Read inFile
   text <- readInputFile inFile
 
-  let res = do
-        parsed <- first ParseError (parseProgram inFile text)
-        typechecked <- first TypeError (typecheck parsed)
+  res <- runExceptT $ do
+    parsed <- hoistEither $ first ParseError (parseProgram inFile text)
+    when (unDumpProgramParsed dumpProgramParsed) $ do
+      putTextLn "Parsed program:\n"
+      putTextLn (showProgramParsed parsed)
 
-        -- TODO[sgillespie]:
-        --
-        --  3. Desugar to SystemF
-        --  4. Add explicit Thunk/Forces
-        --  5. Generate LLVM
+    typechecked <- hoistEither $ first TypeError (typecheck parsed)
+    when (unDumpProgramTypechecked dumpProgramTypechecked) $ do
+      putTextLn "Typechecked program:\n"
+      putTextLn (showProgramTypechecked typechecked)
 
-        -- Dump results
-        Right (showProgramTypechecked typechecked)
+    -- TODO[sgillespie]:
+    --
+    --  3. Desugar to SystemF
+    --  4. Add explicit Thunk/Forces
+    --  5. Generate LLVM
 
-  either 
-    throwIO 
-    (writeOutputFile outFile . encodeUtf8) 
+    -- Dump results
+    hoistEither $ Right (showProgramTypechecked typechecked)
+
+  either
+    throwIO
+    (writeOutputFile outFile . encodeUtf8)
     res
 
 readInputFile :: InputFile -> IO Text

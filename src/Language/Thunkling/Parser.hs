@@ -1,5 +1,6 @@
 module Language.Thunkling.Parser
   ( ParseError,
+    parseErrorPretty,
     parseProgram,
   ) where
 
@@ -18,6 +19,9 @@ import Prelude hiding (many, some)
 
 type Parser = Parsec Void Text
 type ParseError = ParseErrorBundle Text Void
+
+parseErrorPretty :: ParseError -> String
+parseErrorPretty = Parsec.errorBundlePretty
 
 parseProgram
   :: InputFile

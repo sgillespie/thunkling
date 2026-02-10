@@ -1,7 +1,14 @@
 {-# LANGUAGE LambdaCase #-}
 module Language.Thunkling.Pretty 
   ( showProgramParsed,
-    showProgramTypechecked
+    showProgramTypechecked,
+    showTy,
+    showPpr,
+    pprProgramParsed,
+    pprProgramTypechecked,
+    pprExprParsed,
+    pprExprTypechecked,
+    pprTy,
   ) where
 
 import Language.Thunkling.Syntax (Program (..), TopLevelBind (..), Var (..), Ann (..), Expr (..), Phase (..), ExprTy (..), TyScheme (..), TyVar (..), Param (..))
@@ -11,11 +18,39 @@ import Prettyprinter.Render.Text (renderStrict)
 
 -- Pretty print a program as @Text@.
 showProgramParsed :: Program 'Parsed -> Text
-showProgramParsed = renderProgram
+showProgramParsed = showProgram
 
 -- | Pretty print a program as @Text@ after typechecking with explicit type annotations.
 showProgramTypechecked :: Program 'Typechecked -> Text
-showProgramTypechecked = renderProgram
+showProgramTypechecked = showProgram
+
+showProgram :: PprTypeAnn p => Program p -> Text
+showProgram = showPpr . pprProgram
+
+showTy :: ExprTy -> Text
+showTy = showPpr . pprTy
+
+-- | Render a @Doc@ as @Text@
+showPpr :: Doc ann -> Text
+showPpr = renderStrict . mkLayout
+  where
+    mkLayout = Pretty.layoutPretty Pretty.defaultLayoutOptions
+
+-- | Pretty print a program as a @Doc@
+pprProgramParsed :: Program 'Parsed -> Doc ann
+pprProgramParsed = pprProgram
+
+-- | Pretty print a program as a @Doc@ after typechecking with explicit type annotations.
+pprProgramTypechecked :: Program 'Typechecked -> Doc ann
+pprProgramTypechecked = pprProgram
+
+-- | Pretty print an @Expr@ as a @Doc@
+pprExprParsed :: Expr 'Parsed -> Doc ann
+pprExprParsed = pprExpr
+
+-- | Pretty print an @ExprTy@ as a @Doc@ 
+pprExprTypechecked :: Expr 'Typechecked -> Doc ann
+pprExprTypechecked = pprExpr
 
 -- | Pretty print a type annotation. If there is no explicit type, nothing should be
 -- emitted.
@@ -60,11 +95,6 @@ pprSignature name ty =
   Pretty.pretty name <+> 
   Pretty.colon <+> 
   pprTy ty
-
-renderProgram :: PprTypeAnn p => Program p -> Text
-renderProgram = renderStrict . mkLayout . pprProgram
-  where
-    mkLayout = Pretty.layoutPretty Pretty.defaultLayoutOptions
 
 pprProgram :: PprTypeAnn p => Program p -> Doc ann
 pprProgram (Program binds) = 
