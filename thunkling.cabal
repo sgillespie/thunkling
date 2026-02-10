@@ -49,6 +49,7 @@ library
     bytestring,
     containers,
     megaparsec,
+    microlens,
     mtl,
     parser-combinators,
     prettyprinter,

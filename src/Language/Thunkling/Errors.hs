@@ -3,7 +3,7 @@ module Language.Thunkling.Errors
   ) where
 
 import Language.Thunkling.Config (InputFile (..), OutputFile (..))
-import Language.Thunkling.Parser (ParseError)
+import Language.Thunkling.Parser (ParseError, parseErrorPretty)
 import Language.Thunkling.Typecheck (TypeError)
 
 import Text.Show (Show (..))
@@ -16,12 +16,14 @@ data AppError
   | NoOutputFile OutputFile
   | ParseError ParseError
   | TypeError TypeError
-  deriving stock (Eq, Typeable)
+  | UnknownError SomeException
+  deriving stock Typeable
 
 instance Exception AppError
 
 instance Show AppError where
   show (NoInputFile (InputFile file)) = "Unable to open input file " <> file <> "!"
   show (NoOutputFile (OutputFile file)) = "Unable to write output file " <> file <> "!"
-  show (ParseError err) = Show.show err
+  show (ParseError err) = "Parse error at " <> parseErrorPretty err
   show (TypeError err) = Show.show err
+  show (UnknownError err) = Show.show err
