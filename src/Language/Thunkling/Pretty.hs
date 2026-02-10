@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
-module Language.Thunkling.Pretty 
+
+module Language.Thunkling.Pretty
   ( showProgramParsed,
     showProgramTypechecked,
     showTy,
@@ -11,7 +12,18 @@ module Language.Thunkling.Pretty
     pprTy,
   ) where
 
-import Language.Thunkling.Syntax (Program (..), TopLevelBind (..), Var (..), Ann (..), Expr (..), Phase (..), ExprTy (..), TyScheme (..), TyVar (..), Param (..))
+import Language.Thunkling.Syntax
+  ( Ann (..),
+    Expr (..),
+    ExprTy (..),
+    Param (..),
+    Phase (..),
+    Program (..),
+    TopLevelBind (..),
+    TyScheme (..),
+    TyVar (..),
+    Var (..),
+  )
 import Prettyprinter (Doc, (<+>))
 import Prettyprinter qualified as Pretty
 import Prettyprinter.Render.Text (renderStrict)
@@ -24,7 +36,7 @@ showProgramParsed = showProgram
 showProgramTypechecked :: Program 'Typechecked -> Text
 showProgramTypechecked = showProgram
 
-showProgram :: PprTypeAnn p => Program p -> Text
+showProgram :: (PprTypeAnn p) => Program p -> Text
 showProgram = showPpr . pprProgram
 
 showTy :: ExprTy -> Text
@@ -48,7 +60,7 @@ pprProgramTypechecked = pprProgram
 pprExprParsed :: Expr 'Parsed -> Doc ann
 pprExprParsed = pprExpr
 
--- | Pretty print an @ExprTy@ as a @Doc@ 
+-- | Pretty print an @ExprTy@ as a @Doc@
 pprExprTypechecked :: Expr 'Typechecked -> Doc ann
 pprExprTypechecked = pprExpr
 
@@ -75,10 +87,10 @@ instance PprTypeAnn 'Parsed where
 instance PprTypeAnn 'Typechecked where
   pprTopLevelAnn (V v (TypedAnn ty)) = pprSignature v ty <> Pretty.line
 
-  pprInlineAnn (V _ (TypedAnn ty)) = 
-      -- We want to avoid littering the output with foralls and arrows, so so we'll only
-      -- process the simplest cases: literals and type variables
-      maybe Pretty.emptyDoc ((":" <>) . pprTy) (simpleTy ty)
+  pprInlineAnn (V _ (TypedAnn ty)) =
+    -- We want to avoid littering the output with foralls and arrows, so so we'll only
+    -- process the simplest cases: literals and type variables
+    maybe Pretty.emptyDoc ((":" <>) . pprTy) (simpleTy ty)
     where
       simpleTy = \case
         (TyArrow _ _) -> Nothing
@@ -87,37 +99,39 @@ instance PprTypeAnn 'Typechecked where
         (TyVar _) -> Just ty
         TyInt -> Just ty
         TyBool -> Just ty
-        TyUnit -> Just ty 
+        TyUnit -> Just ty
         TyString -> Just ty
 
-pprSignature :: Pretty.Pretty a => a -> ExprTy -> Doc ann
-pprSignature name ty = 
-  Pretty.pretty name <+> 
-  Pretty.colon <+> 
-  pprTy ty
+pprSignature :: (Pretty.Pretty a) => a -> ExprTy -> Doc ann
+pprSignature name ty =
+  Pretty.pretty name
+    <+> Pretty.colon
+    <+> pprTy ty
 
-pprProgram :: PprTypeAnn p => Program p -> Doc ann
-pprProgram (Program binds) = 
-  vsep2 (map pprBind binds) <>  -- Print bindings between 2 blank lines
-  Pretty.line                   -- Add a newline to the end
-  where 
-    vsep2 = Pretty.concatWith (\ x y -> x <> blankLine <> y)
+pprProgram :: (PprTypeAnn p) => Program p -> Doc ann
+pprProgram (Program binds) =
+  vsep2 (map pprBind binds)
+    <> Pretty.line -- Print bindings between 2 blank lines
+    -- Add a newline to the end
+  where
+    vsep2 = Pretty.concatWith (\x y -> x <> blankLine <> y)
     blankLine = Pretty.line <> Pretty.line
 
-pprBind :: PprTypeAnn p => TopLevelBind p -> Doc ann
-pprBind TopLevelBind{..} = 
-  pprTopLevelAnn bindVar <> 
-  pprLhs <+>
-  "=" <+> pprExpr bindExpr
+pprBind :: (PprTypeAnn p) => TopLevelBind p -> Doc ann
+pprBind TopLevelBind{..} =
+  pprTopLevelAnn bindVar
+    <> pprLhs
+    <+> "="
+    <+> pprExpr bindExpr
   where
-    pprLhs = 
+    pprLhs =
       -- Construct a flat list of @Doc@s, then space separate them. This is to make sure
       -- we only print a single space at the end whether or not there are parameters
       Pretty.hsep $
         Pretty.pretty (vName bindVar) : map (Pretty.pretty . unParam) bindParams
 
-pprVar :: PprTypeAnn phase => Var (Ann phase) -> Doc ann
-pprVar v@V{..}= Pretty.pretty vName <> pprInlineAnn v
+pprVar :: (PprTypeAnn phase) => Var (Ann phase) -> Doc ann
+pprVar v@V{..} = Pretty.pretty vName <> pprInlineAnn v
 
 pprTy :: ExprTy -> Doc ann
 pprTy (TyArrow t1 t2) = pprTy t1 <+> "->" <+> pprTy t2
@@ -130,12 +144,12 @@ pprTy TyUnit = "()"
 
 pprTyScheme :: TyScheme -> Doc ann
 pprTyScheme (Forall vars tyBody) =
-  "forall" <+>
-  Pretty.hsep (map (Pretty.pretty . unTv) vars) <>
-  Pretty.dot <+>
-  pprTy tyBody
+  "forall"
+    <+> Pretty.hsep (map (Pretty.pretty . unTv) vars)
+    <> Pretty.dot
+    <+> pprTy tyBody
 
-pprExpr :: PprTypeAnn phase => Expr phase -> Doc ann
+pprExpr :: (PprTypeAnn phase) => Expr phase -> Doc ann
 pprExpr (Var v) = pprVar v
 pprExpr (App e1 e2) = pprApp e1 e2
 pprExpr (Abs v body) = "\\" <+> pprVar v <> "." <+> pprExpr body
@@ -144,16 +158,16 @@ pprExpr (LitBool b) = Pretty.pretty b
 pprExpr (LitString s) = Pretty.dquotes (Pretty.pretty s)
 pprExpr LitUnit = "()"
 
-pprApp :: PprTypeAnn phase => Expr phase -> Expr phase -> Doc ann
+pprApp :: (PprTypeAnn phase) => Expr phase -> Expr phase -> Doc ann
 pprApp (App (Var V{vName}) e1) e2 = pprBinOp e1 vName e2
 pprApp e1 e2 = pprOperand e1 <+> pprOperand e2
 
-pprBinOp :: PprTypeAnn phase => Expr phase -> Text -> Expr phase -> Doc ann
-pprBinOp e1 op e2 
+pprBinOp :: (PprTypeAnn phase) => Expr phase -> Text -> Expr phase -> Doc ann
+pprBinOp e1 op e2
   | op `elem` ["*", "/", "+", "-"] = pprExpr e1 <+> Pretty.pretty op <+> pprExpr e2
   | otherwise = Pretty.pretty op <+> pprOperand e1 <+> pprOperand e2
 
-pprOperand :: PprTypeAnn phase => Expr phase -> Doc ann
+pprOperand :: (PprTypeAnn phase) => Expr phase -> Doc ann
 pprOperand expr@Var{} = pprExpr expr
 pprOperand expr@App{} = Pretty.parens (pprExpr expr)
 pprOperand expr@Abs{} = Pretty.parens (pprExpr expr)

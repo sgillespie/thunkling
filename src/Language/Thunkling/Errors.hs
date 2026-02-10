@@ -17,7 +17,7 @@ data AppError
   | ParseError ParseError
   | TypeError TypeError
   | UnknownError SomeException
-  deriving stock Typeable
+  deriving stock (Typeable)
 
 instance Exception AppError
 

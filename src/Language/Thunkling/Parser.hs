@@ -129,7 +129,7 @@ expr = makeExprParser term table
       ]
 
     appOp f = InfixL (pure f)
-    binOp name = InfixL (binApp name <$ symbol name) 
+    binOp name = InfixL (binApp name <$ symbol name)
     binApp fname = App . App (Var $ V fname parsedAnnEmpty)
 
 term :: Parser (Expr 'Parsed)

@@ -31,8 +31,7 @@ data Phase
 
 data family Ann (phase :: Phase)
 
-newtype instance Ann 'Parsed
-  = ParsedAnn {unParsedAnn :: Maybe ExprTy}
+newtype instance Ann 'Parsed = ParsedAnn {unParsedAnn :: Maybe ExprTy}
   deriving stock (Eq, Show)
 
 parsedAnnEmpty :: Ann 'Parsed
@@ -41,8 +40,7 @@ parsedAnnEmpty = ParsedAnn Nothing
 parsedAnn :: ExprTy -> Ann 'Parsed
 parsedAnn = ParsedAnn . Just
 
-newtype instance Ann 'Typechecked
-  = TypedAnn {unTypedAnn :: ExprTy}
+newtype instance Ann 'Typechecked = TypedAnn {unTypedAnn :: ExprTy}
   deriving stock (Eq, Show)
 
 newtype Program phase = Program {unProgram :: [TopLevelBind phase]}

@@ -12,11 +12,10 @@ newtype InputFile = InputFile {unInputFile :: FilePath}
 newtype OutputFile = OutputFile {unOutputFile :: FilePath}
   deriving stock (Eq, Ord, Show)
 
-data Opts =
-  Opts
-    { dumpProgramParsed :: DumpProgramParsed,
-      dumpProgramTypechecked :: DumpProgramTypechecked
-    }
+data Opts = Opts
+  { dumpProgramParsed :: DumpProgramParsed,
+    dumpProgramTypechecked :: DumpProgramTypechecked
+  }
 
 newtype DumpProgramParsed = DumpProgramParsed {unDumpProgramParsed :: Bool}
   deriving stock (Eq, Ord, Show)
