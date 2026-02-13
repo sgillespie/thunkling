@@ -79,6 +79,7 @@ simpleTy =
     <|> (symbol "Int" $> TyInt)
     <|> (symbol "Bool" $> TyBool)
     <|> (TyVar <$> identifier)
+    <|> betweenParens tyTerm
 
 bind
   :: Maybe (Name, ExprTy)
