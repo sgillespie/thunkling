@@ -9,7 +9,6 @@ import Language.Thunkling.Syntax
 
 import Control.Monad.Except (Except, MonadError (..), runExcept)
 import Control.Monad.RWS (MonadWriter (..), RWST, evalRWST)
-import Data.Foldable (foldr1)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
@@ -270,7 +269,7 @@ inferTopBind TopLevelBind{..} = do
     inferTopTy paramTys bodyTy =
       case nonEmpty paramTys of
         Nothing -> bodyTy
-        Just paramTys' -> foldr1 TyArrow paramTys' `TyArrow` bodyTy
+        Just paramTys' -> foldr TyArrow bodyTy paramTys'
 
 inferExpr :: Expr 'Parsed -> Infer (Expr 'Typechecked)
 inferExpr expr = do
