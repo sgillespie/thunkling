@@ -93,7 +93,7 @@ emptyTyEnv =
         ("/", Forall [] (TyInt `TyArrow` (TyInt `TyArrow` TyInt))),
         ("+", Forall [] (TyInt `TyArrow` (TyInt `TyArrow` TyInt))),
         ("-", Forall [] (TyInt `TyArrow` (TyInt `TyArrow` TyInt))),
-        ("println", Forall [] (TyString `TyArrow` TyUnit))
+        ("println", Forall ["a"] (TyVar "a" `TyArrow` TyUnit))
       ]
 
 extendTyEnv :: TyEnv -> (Name, TyScheme) -> TyEnv
