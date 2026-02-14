@@ -17,6 +17,7 @@ import Language.Thunkling.Pretty (showTy)
 import Lens.Micro ((%~))
 import Relude.Unsafe ((!!))
 import Text.Show qualified as Show
+import Data.Foldable (Foldable(..), foldrM)
 
 data TypeError
   = UnboundVariable Name
@@ -76,12 +77,12 @@ newtype InferState = InferState {stateCount :: Int}
   deriving stock (Eq, Show)
   deriving newtype (Num)
 
-runInfer :: Infer a -> Either TypeError (a, [TyConstraint])
-runInfer (Infer m) =
+runInfer :: TyEnv -> Infer a -> Either TypeError (a, [TyConstraint])
+runInfer env (Infer m) =
   runExcept $
     evalRWST
       m
-      emptyTyEnv
+      env
       initInferState
 
 emptyTyEnv :: TyEnv
@@ -209,14 +210,28 @@ freeTyVars (TyAbs (Forall vs innerTy)) =
   freeTyVars innerTy `Set.difference` Set.fromList vs
 
 typecheck :: Program 'Parsed -> Either TypeError (Program 'Typechecked)
-typecheck (Program binds) = do
-  binds' <- mapM typecheckBind binds
-  Right (Program binds')
+typecheck (Program binds) = Program <$> evalStateT (mapM typecheck' binds) emptyTyEnv
 
-typecheckBind :: TopLevelBind 'Parsed -> Either TypeError (TopLevelBind 'Typechecked)
-typecheckBind binding = do
+typecheck' 
+  :: TopLevelBind 'Parsed 
+  -> StateT TyEnv (Either TypeError) (TopLevelBind 'Typechecked)
+typecheck' bind' = do
+  env <- get
+
+  res@TopLevelBind{..} <- lift $ typecheckBind env bind'
+  let V{vName, vType = TypedAnn ty} = bindVar
+
+  put $ env `extendTyEnv` (vName, mkScheme ty)
+
+  pure res
+  where
+    mkScheme (TyAbs scheme) = scheme
+    mkScheme ty = Forall [] ty
+
+typecheckBind :: TyEnv -> TopLevelBind 'Parsed -> Either TypeError (TopLevelBind 'Typechecked)
+typecheckBind env binding = do
   runExcept $ do
-    (inferred, constraints) <- hoistEither $ runInfer (inferTopBind binding)
+    (inferred, constraints) <- hoistEither $ runInfer env (inferTopBind binding)
     solved <- hoistEither $ runSolve solveConstraints constraints
 
     let
